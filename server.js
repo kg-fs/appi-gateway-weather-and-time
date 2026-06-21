@@ -4,17 +4,14 @@ const morgan = require('morgan');
 
 const app = express();
 
-// Configuración de puertos y URLs de los microservicios
 const PORT = process.env.PORT || 3003;
 const WEATHER_SERVICE_URL = process.env.WEATHER_SERVICE_URL || 'http://177.7.42.180:3001';
 const TIME_SERVICE_URL = process.env.TIME_SERVICE_URL || 'http://177.7.42.180:3002';
 
-// Middlewares
 app.use(cors());
 app.use(express.json());
-app.use(morgan('dev')); // Registro de solicitudes en consola
+app.use(morgan('dev'));
 
-// Endpoint de Salud Consolidado
 app.get('/health', async (req, res) => {
     const healthStatus = {
         gateway: {
@@ -33,10 +30,9 @@ app.get('/health', async (req, res) => {
         }
     };
 
-    // Verificar salud de Weather Microservice
     try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 2000); // 2s timeout
+        const timeoutId = setTimeout(() => controller.abort(), 2000);
         
         const response = await fetch(`${WEATHER_SERVICE_URL}/health`, { signal: controller.signal });
         clearTimeout(timeoutId);
@@ -56,10 +52,9 @@ app.get('/health', async (req, res) => {
         healthStatus.weatherService.message = error.message;
     }
 
-    // Verificar salud de Time Microservice
     try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 2000); // 2s timeout
+        const timeoutId = setTimeout(() => controller.abort(), 2000);
         
         const response = await fetch(`${TIME_SERVICE_URL}/health`, { signal: controller.signal });
         clearTimeout(timeoutId);
@@ -79,7 +74,6 @@ app.get('/health', async (req, res) => {
         healthStatus.timeService.message = error.message;
     }
 
-    // Determinar código de estado HTTP general
     const systemUp = healthStatus.gateway.status === "UP" && 
                      healthStatus.weatherService.status === "UP" && 
                      healthStatus.timeService.status === "UP";
@@ -87,7 +81,6 @@ app.get('/health', async (req, res) => {
     res.status(systemUp ? 200 : 207).json(healthStatus);
 });
 
-// Proxy para el Weather Microservice
 app.get('/api/weather', async (req, res, next) => {
     try {
         const { country } = req.query;
@@ -117,7 +110,6 @@ app.get('/api/weather', async (req, res, next) => {
     }
 });
 
-// Proxy para el Time Microservice
 app.get('/api/time', async (req, res, next) => {
     try {
         const { country } = req.query;
@@ -147,7 +139,6 @@ app.get('/api/time', async (req, res, next) => {
     }
 });
 
-// Manejo global de rutas no encontradas
 app.use((req, res) => {
     res.status(404).json({
         error: "Not Found",
@@ -155,7 +146,6 @@ app.use((req, res) => {
     });
 });
 
-// Manejo global de errores del servidor
 app.use((err, req, res, next) => {
     console.error("Unhandled Gateway Error:", err);
     res.status(500).json({
@@ -164,7 +154,6 @@ app.use((err, req, res, next) => {
     });
 });
 
-// Levantar el servidor
 app.listen(PORT, () => {
     console.log(`==================================================`);
     console.log(` API Gateway escuchando en el puerto ${PORT}`);
